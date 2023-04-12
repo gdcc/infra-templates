@@ -1,0 +1,11 @@
+services:
+  application:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${CONTAINER_NAME}
+    command: ["uvicorn", "main:app", "--reload", "--proxy-headers", "--host", "0.0.0.0", "--port", "${PORT}"]
+    volumes:
+      - "./${APPLICATION_DIR}:/root/${APPLICATION_DIR}"
+    ports:
+      - "${PORT}:${PORT}"
