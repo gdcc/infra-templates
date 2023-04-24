@@ -46,12 +46,12 @@ resource "azurerm_network_security_rule" "{{ name }}_security_ssh" {
   protocol                   = "Tcp"
   source_port_range          = "*"
   destination_port_range     = "22"
-  source_address_prefixes    = ["77.165.196.232", "192.87.139.123", "103.43.0.0/16"]
+  source_address_prefixes    = ["77.165.196.232", "192.87.139.123",{% if ssh_ip_whitelist %} "{{ ssh_ip_whitelist}}"{%endif%}]
   destination_address_prefix = "*"
   resource_group_name        = azurerm_resource_group.{{ name }}_rg.name
   network_security_group_name = azurerm_network_security_group.{{ name }}_nsg.name
 }
-
+{% if security_policy == "internal" %}
 resource "azurerm_network_security_rule" "{{ name }}_security_https" {
   name                       = "HTTPS"
   priority                   = 1020
@@ -60,25 +60,55 @@ resource "azurerm_network_security_rule" "{{ name }}_security_https" {
   protocol                   = "Tcp"
   source_port_range          = "*"
   destination_port_range     = "443"
-  source_address_prefixes    = ["77.165.196.232", "192.87.139.123", "103.43.0.0/16"]
+  source_address_prefixes    = ["77.165.196.232", "192.87.139.123"]
   destination_address_prefix = "*"
   resource_group_name        = azurerm_resource_group.{{ name }}_rg.name
   network_security_group_name = azurerm_network_security_group.{{ name }}_nsg.name
 }
 
 resource "azurerm_network_security_rule" "{{ name }}_security_http" {
-  name                       = "HTTP"
+  name                       = "SSH_DENY"
   priority                   = 1030
   direction                  = "Inbound"
   access                     = "Allow"
   protocol                   = "Tcp"
   source_port_range          = "*"
   destination_port_range     = "80"
-  source_address_prefixes    = ["77.165.196.232", "192.87.139.123", "103.43.0.0/16"]
+  source_address_prefixes    = ["77.165.196.232", "192.87.139.123"]
   destination_address_prefix = "*"
   resource_group_name        = azurerm_resource_group.{{ name }}_rg.name
   network_security_group_name = azurerm_network_security_group.{{ name }}_nsg.name
 }
+{% elif security_policy == "external" %}
+resource "azurerm_network_security_rule" "{{ name }}_security_https" {
+  name                       = "HTTPS"
+  priority                   = 1020
+  direction                  = "Inbound"
+  access                     = "Allow"
+  protocol                   = "Tcp"
+  source_port_range          = "*"
+  destination_port_range     = "443"
+  source_address_prefixes    = "*"
+  destination_address_prefix = "*"
+  resource_group_name        = azurerm_resource_group.{{ name }}_rg.name
+  network_security_group_name = azurerm_network_security_group.{{ name }}_nsg.name
+}
+
+resource "azurerm_network_security_rule" "{{ name }}_security_http" {
+  name                       = "SSH_DENY"
+  priority                   = 1030
+  direction                  = "Inbound"
+  access                     = "Allow"
+  protocol                   = "Tcp"
+  source_port_range          = "*"
+  destination_port_range     = "80"
+  source_address_prefix      = "*"
+  destination_address_prefix = "*"
+  resource_group_name        = azurerm_resource_group.{{ name }}_rg.name
+  network_security_group_name = azurerm_network_security_group.{{ name }}_nsg.name
+}
+
+{% endif %}
 
 resource "azurerm_network_security_rule" "{{ name }}_security_ssh_deny" {
   name                       = "HTTP"
@@ -96,7 +126,7 @@ resource "azurerm_network_security_rule" "{{ name }}_security_ssh_deny" {
 
 # Create network interface
 resource "azurerm_network_interface" "{{ name }}_nic" {
-  name                = "sicataTestNIC"
+  name                = "{{ name }}NIC"
   location            = azurerm_resource_group.{{ name }}_rg.location
   resource_group_name = azurerm_resource_group.{{ name }}_rg.name
 
@@ -156,11 +186,11 @@ resource "azurerm_linux_virtual_machine" "{{ name }}_vm" {
   source_image_reference {
     publisher = "Canonical"
     offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
+    sku       = "22.04-LTS"
     version   = "latest"
   }
 
-  computer_name                   = "{{ name }}"
+  computer_name                   = "{{ vm_name }}"
   admin_username                  = "azureuser"
   disable_password_authentication = true
 

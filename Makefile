@@ -18,7 +18,7 @@ startbg: ## Start project running in detached mode - background.
 stop: ## Stop the running project.
 	@docker-compose stop
 test: ## Run unit tests
-	@docker exec -it ${CONTAINER_NAME} pytest
+	@docker exec -it ${CONTAINER_NAME} python -m pytest -s
 copy-poetry-files: ## Copies poetry files inside container
 	@docker cp ./pyproject.toml ${CONTAINER_NAME}:/pyproject.toml
 export-poetry-files: ## Exports poetry files from inside container
@@ -29,12 +29,12 @@ update-requirements: copy-poetry-files
 	make export-poetry-files ## Export requirements and lock file
 add-poetry-package: copy-poetry-files ## Adds a poetry package, using backend container to resolve. Expects: package_name arg. Ex: make add-poetry-package package_name="foo"
 	@docker exec -it ${CONTAINER_NAME} poetry add ${package_name}
-	make export-poetry-files
+	#make export-poetry-files
 remove-poetry-package: copy-poetry-files ## Removes a poetry package. Similar to adding.
 	@docker exec -it ${CONTAINER_NAME} poetry remove ${package_name}
 	make export-poetry-files
 shell: ## Enter system shell in backend container
-	@docker-compose exec ${CONTAINER_NAME} sh
+	@docker-compose exec ${CONTAINER_NAME} bash 
 python-shell-be: ## Enter into IPython shell in backend container
 	@docker-compose exec ${CONTAINER_NAME} python -m IPython
 version:  ## Export version

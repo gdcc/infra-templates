@@ -1,6 +1,6 @@
 import socket
 from fastapi import HTTPException
-from azcache import AzLivingCache
+from .cache import AzLivingCache
 
 def validate_location(location):
     if location not in AzLivingCache.valid_locations():
@@ -14,7 +14,8 @@ def validate_vm_size(vm_size):
         raise HTTPException(status_code=400, detail="VM size incorrect")
 
 def validate_security_policy(security_policy):
-    if security_policy != "internal" or "external":
+    print(security_policy)
+    if security_policy.lower() not in ("internal", "external"):
         raise HTTPException(
             status_code=400,
             detail="Security policy incorrect; must be 'internal' or 'external'"
