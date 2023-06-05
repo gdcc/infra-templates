@@ -3,10 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ${CONTAINER_NAME}
+    image: thomasve/worldengine:0.1.3
+    container_name: "worldengine"
     command: ["uvicorn", "main:app", "--reload", "--proxy-headers", "--host", "0.0.0.0", "--port", "${PORT}"]
     volumes:
-      - "./${APPLICATION_DIR}:/root/${APPLICATION_DIR}"
+      - "./${APPLICATION_DIR}:/${APPLICATION_DIR}"
     ports:
       - "${PORT}:${PORT}"
     networks:

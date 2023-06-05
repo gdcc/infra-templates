@@ -1,0 +1,60 @@
+- name: Install and start dataverse docker
+  hosts: all
+  remote_user: azureuser
+  become: yes
+  tasks:
+
+    # First to install docker
+    - name: Dependencies
+      apt:
+        name: "{{item}}"
+        state: present
+        update_cache: yes
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - gnupg-agent
+        - software-properties-common
+
+    - name: add docker repository to apt
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: install docker
+      apt:
+        name: "{{item}}"
+        state: latest
+        update_cache: yes
+      loop:
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+
+    - name: start stuff
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    # Setup dataverse docker
+    - name: Clone dataverse docker repository
+      git:
+       repo: https://github.com/ICQS/dataverse-docker.git
+       dest: /data/dataverse-docker
+       clone: yes
+       update: yes
+
+    - name: Copy env
+      ansible.builtin.copy:
+        src: /data/dataverse-docker/.env_sample
+        dest: /data/dataverse-docker/.env
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Start
+      ansible.builtin.shell: docker compose up -d
+      args:
+        chdir: /data/dataverse-docker/

@@ -198,6 +198,9 @@ resource "azurerm_linux_virtual_machine" "{{ name }}_vm" {
     username   = "azureuser"
     public_key = tls_private_key.{{ name }}_ssh.public_key_openssh
   }
+  {% if cloudinit_file %}
+  custom_data = data.template_cloudinit_config.config.rendered
+  {% endif %}
 
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.{{ name }}_storage_account.primary_blob_endpoint

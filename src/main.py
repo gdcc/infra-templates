@@ -14,7 +14,8 @@ def return_main_tf(
         vm_size: str,
         vm_name: str,
         security_policy: str | None = 'internal',
-        ssh_ip_whitelist: str | None = None):
+        ssh_ip_whitelist: str | None = None,
+        cloudinit_file: str | None = None):
     validators.validate_vm_size(vm_size)
     validators.validate_security_policy(security_policy)
     if ssh_ip_whitelist:
@@ -28,6 +29,7 @@ def return_main_tf(
             "security_policy": security_policy.lower(),
             "vm_name": vm_name,
             "ssh_ip_whitelist": ssh_ip_whitelist,
+            "cloudinit_file": cloudinit_file
         }
     )
 
@@ -60,12 +62,14 @@ def return_outputs_tf(
 
 @app.get("/terraform/azure/providers")
 def return_providers_tf(
-    request: Request
+        request: Request,
+        cloudinit_file: str | None = None
 ):
     return templates.TemplateResponse(
         "azure/providers.tf",
         {
-            "request": request
+            "request": request,
+            "cloudinit_file": cloudinit_file
         }
     )
 
@@ -77,3 +81,43 @@ def return_locations():
 def return_vm_sizes():
     return AzLivingCache.filtered_vm_list()
 
+
+@app.get("/cloudinit/docker")
+def return_dataverse_docker_playbook(
+        request: Request,
+):
+    return templates.TemplateResponse(
+        "cloudinit/docker-dataverse.yml",
+        {
+            "request": request,
+        }
+    )
+
+@app.get("/cloudinit/downloadfiles")
+def download_files_to_home_dir(
+        request: Request,
+        file_urls=[]
+):
+    fixed_urls = str(file_urls).split(",")
+    stripped_urls = [item.strip() for item in fixed_urls]
+    return templates.TemplateResponse(
+        "cloudinit/download-files.yml",
+        {
+            "request": request,
+            "files": set(stripped_urls),
+        }
+    )
+
+@app.get("/bash/placeholder")
+def retrieve_bash_script(
+        request: Request,
+        args: str,
+        script_name: str | None = 'placeholder.sh',
+):
+    return templates.TemplateResponse(
+       f"bash/{script_name}",
+        {
+            "request": request,
+            "args": args
+        }
+    )
