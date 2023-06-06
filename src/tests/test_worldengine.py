@@ -63,9 +63,17 @@ def test_download_files():
     assert "http://zebra.faketset/nothing" not in response.content.decode('utf-8')
 
 def test_bash_placeholder():
-    test_url = 'http://localhost:6067/bash/placeholder?args=monkey'
+    test_url = 'http://localhost:6067/bash/scripts/placeholder.sh?args=monkey'
     response = client.get(test_url)
     assert response.status_code == 200
     assert "monkey" in response.content.decode('utf-8')
     assert "#!/usr/bin/env sh" in response.content.decode('utf-8')
     assert "zebra" not in response.content.decode('utf-8')
+
+def test_bash_list():
+    test_url = 'http://localhost:6067/bash/scripts'
+    response = client.get(test_url)
+    assert response.status_code == 200
+    assert response.content.decode('utf-8') is not None
+    assert 'placeholder.sh' in response.content.decode('utf-8')
+    assert 'monkey.sh' not in response.content.decode('utf-8')

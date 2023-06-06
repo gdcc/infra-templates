@@ -1,7 +1,13 @@
+import os
+
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
-from azure import validators
+from fastapi.encoders import jsonable_encoder
+from azure import validators as azure_validators
+from bash import validators as bash_validators
 from azure.cache import AzLivingCache
+from jinja2.exceptions import TemplateNotFound
 
 app = FastAPI()
 
@@ -16,10 +22,10 @@ def return_main_tf(
         security_policy: str | None = 'internal',
         ssh_ip_whitelist: str | None = None,
         cloudinit_file: str | None = None):
-    validators.validate_vm_size(vm_size)
-    validators.validate_security_policy(security_policy)
+    azure_validators.validate_vm_size(vm_size)
+    azure_validators.validate_security_policy(security_policy)
     if ssh_ip_whitelist:
-        validators.validate_ip(ssh_ip_whitelist)
+        azure_validators.validate_ip(ssh_ip_whitelist)
     return templates.TemplateResponse(
         "azure/main.tf",
         {
@@ -38,7 +44,7 @@ def return_variables_tf(
         request: Request,
         name: str,
         location: str):
-    validators.validate_location(location)
+    azure_validators.validate_location(location)
     return templates.TemplateResponse(
         "azure/variables.tf",
         {
@@ -108,16 +114,24 @@ def download_files_to_home_dir(
         }
     )
 
-@app.get("/bash/placeholder")
+@app.get("/bash/scripts/{script_name}")
 def retrieve_bash_script(
         request: Request,
         args: str,
         script_name: str | None = 'placeholder.sh',
 ):
+    bash_validators.validate_bash_file_present(script_name)
     return templates.TemplateResponse(
-       f"bash/{script_name}",
+        f"bash/{script_name}",
         {
             "request": request,
             "args": args
         }
     )
+
+@app.get("/bash/scripts")
+def retrieve_bash_script_list(
+        request: Request,
+):
+    bash_files = os.listdir('/src/templates/bash')
+    return JSONResponse(content=jsonable_encoder(bash_files))

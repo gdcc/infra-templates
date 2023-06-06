@@ -9,4 +9,3 @@ def get_version():
 
 if __name__ == '__main__':
     result = get_version()
-    print(result)

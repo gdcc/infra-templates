@@ -14,7 +14,6 @@ def validate_vm_size(vm_size):
         raise HTTPException(status_code=400, detail="VM size incorrect")
 
 def validate_security_policy(security_policy):
-    print(security_policy)
     if security_policy.lower() not in ("internal", "external"):
         raise HTTPException(
             status_code=400,
