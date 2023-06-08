@@ -15,7 +15,7 @@ Alternatively pull an image from Dockerhub from thomasve.
 ### Local development
 
 1. Clone the repo.
-2. All code lives in main.py, go crazy there. Templates can be added in the templates folder.
+2. All code lives in main.py, go crazy there. Templates can be added in the "templates" folder.
 
 ### Upgrading
 
