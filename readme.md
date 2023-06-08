@@ -1,10 +1,10 @@
-## Release the world engine
+## Release the infra templates 
 
-World engine is a project that came to be from a need to template infrastructure in a flexible manner. With a FastAPI stack running a bit of Jinja, we end up exactly here.
+Infra templates is a project that came to be from a need to template infrastructure in a flexible manner. With a FastAPI stack running a bit of Jinja, we end up exactly here.
 
-The project builds to a Docker container; spinning this container allows you to make API calls, which results in files with glorious Terraform with your arguments.
+The project builds to a Docker container; spinning this container allows you to make API calls, which results in valid files with glorious Terraform.
 
-Furthermore, the world engine can be used to host cloudinit scripting with similar mechanics, and bash scripts which can be pulled from the container. Who doesn't love recursivity?
+Furthermore, infra templates can be used to host cloudinit scripting with similar mechanics, and bash scripts which can be pulled from the container. Who doesn't love recursivity?
 
 ### Starting up
 
