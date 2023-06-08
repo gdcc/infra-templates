@@ -1,10 +1,7 @@
-## Release the infra templates 
+# infra-templates
+API to create templates for cloud infrastructure intended for the automated Dataverse deployment on various cloud platforms.
 
-Infra templates is a project that came to be from a need to template infrastructure in a flexible manner. With a FastAPI stack running a bit of Jinja, we end up exactly here.
-
-The project builds to a Docker container; spinning this container allows you to make API calls, which results in valid files with glorious Terraform.
-
-Furthermore, infra templates can be used to host cloudinit scripting with similar mechanics, and bash scripts which can be pulled from the container. Who doesn't love recursivity?
+Collaborative service created and maintained by [DANS-KNAW](https://dans.knaw.nl/en/), [GDCC](http://dataversecommunity.global), [Forschungszentrum Jülich](https://www.fz-juelich.de) and [Harvard IQSS](https://www.iq.harvard.edu).
 
 ### Starting up
 
@@ -26,3 +23,7 @@ Alternatively pull an image from Dockerhub from thomasve.
 2. Ideally, install poetry.
 3. Make changes to pyproject.toml file
 4. `docker compose build`
+
+### Testing
+
+1. Repo is tested by pytest; this can be called to run in Docker.
