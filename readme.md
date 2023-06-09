@@ -5,10 +5,11 @@ Collaborative service created and maintained by [DANS-KNAW](https://dans.knaw.nl
 
 ### Starting up
 
-1. Clone the repo
-2. `docker compose build`
-3. `docker compose up`
-4. `Go to http://localhost:6067`
+1. Clone the repo and go to the folder.
+2. `cp .env_sample .env` 
+3. `docker compose build`
+4. `docker compose up`
+5. `Go to http://localhost:6067`
 
 Alternatively pull an image from Dockerhub from thomasve.
 
