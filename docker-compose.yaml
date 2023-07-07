@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: gdcc/infra-templates:0.1
+    image: gdcc/infra-templates:0.2.1
     container_name: "infra-templates"
     command: ["uvicorn", "main:app", "--reload", "--proxy-headers", "--host", "0.0.0.0", "--port", "${PORT}"]
     volumes:

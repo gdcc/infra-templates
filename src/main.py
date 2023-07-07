@@ -1,7 +1,7 @@
 import os
 
 from fastapi import FastAPI, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.encoders import jsonable_encoder
 from azure import validators as azure_validators
@@ -23,6 +23,10 @@ from defaults.azure import (
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
+
+@app.get("/")
+def redirect_to_docs():
+    return RedirectResponse(url="https://infra-templates.gdcc.io/docs/")
 
 @app.post("/terraform/azure/main")
 def return_main_tf(
