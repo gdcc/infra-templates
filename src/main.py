@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.encoders import jsonable_encoder
@@ -8,69 +8,79 @@ from azure import validators as azure_validators
 from bash import validators as bash_validators
 from azure.cache import AzLivingCache
 from jinja2.exceptions import TemplateNotFound
+from models import TemplateCreateModel
+
+from base import base_list_method, base_get_method, base_create_method, base_delete_method
+from defaults.azure import (
+    BASH_DEFAULTS,
+    DOWNLOAD_FILE_DEFAULTS,
+    MAIN_TF_DEFAULTS,
+    OUTPUTS_TF_DEFAULTS,
+    PROVIDERS_TF_DEFAULTS,
+    VARIABLES_TF_DEFAULTS,
+)
 
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
 
-@app.get("/terraform/azure/main")
+@app.post("/terraform/azure/main")
 def return_main_tf(
         request: Request,
-        name: str,
-        vm_size: str,
-        vm_name: str,
-        security_policy: str | None = 'internal',
-        ssh_ip_whitelist: str | None = None,
-        cloudinit_file: str | None = None):
-    azure_validators.validate_vm_size(vm_size)
-    azure_validators.validate_security_policy(security_policy)
-    if ssh_ip_whitelist:
-        azure_validators.validate_ip(ssh_ip_whitelist)
-    return templates.TemplateResponse(
-        "azure/main.tf",
-        {
-            "request": request,
-            "name": name,
-            "vm_size": vm_size,
-            "security_policy": security_policy.lower(),
-            "vm_name": vm_name,
-            "ssh_ip_whitelist": ssh_ip_whitelist,
-            "cloudinit_file": cloudinit_file
-        }
+        variables: dict | None = MAIN_TF_DEFAULTS,
+    ):
+    try:
+        variables['name']
+        variables['vm_name']
+        variables['vm_size']
+    except KeyError:
+        raise HTTPException(
+            status_code=400, detail="Missing variables."
+        )
+    azure_validators.validate_vm_size(variables.get('vm_size'))
+    azure_validators.validate_security_policy(variables['security_policy'])
+    if variables.get('ssh_ip_whitelist'):
+        azure_validators.validate_ip(variables['ssh_ip_whitelist'])
+    return base_get_method(
+        request=request,
+        variables=variables,
+        filepath='/src/templates/azure/main.tf',
+        optional_vars=['ssh_ip_whitelist', 'cloudinit_file']
     )
 
-@app.get("/terraform/azure/variables")
+@app.post("/terraform/azure/variables")
 def return_variables_tf(
         request: Request,
-        name: str,
-        location: str):
-    azure_validators.validate_location(location)
-    return templates.TemplateResponse(
-        "azure/variables.tf",
-        {
-            "request": request,
-            "name": name,
-            "location": location
-        }
+        variables: dict | None = VARIABLES_TF_DEFAULTS
+):
+    azure_validators.validate_location(variables.get('location'))
+    return base_get_method(
+        request=request,
+        variables=variables,
+        filepath='/src/templates/azure/variables.tf'
     )
 
-@app.get("/terraform/azure/outputs")
+@app.post("/terraform/azure/outputs")
 def return_outputs_tf(
         request: Request,
-        name: str):
-    return templates.TemplateResponse(
-        "azure/outputs.tf",
-        {
-            "request": request,
-            "name": name
-        }
+        variables: dict | None = OUTPUTS_TF_DEFAULTS):
+    return base_get_method(
+        request=request,
+        variables=variables,
+        filepath='/src/templates/azure/outputs.tf'
     )
 
-@app.get("/terraform/azure/providers")
+@app.post("/terraform/azure/providers")
 def return_providers_tf(
         request: Request,
-        cloudinit_file: str | None = None
+        variables: dict | None = PROVIDERS_TF_DEFAULTS
 ):
+    return base_get_method(
+        request=request,
+        variables=variables,
+        filepath='/src/templates/azure/providers.tf',
+        optional_vars=['cloudinit_file']
+    )
     return templates.TemplateResponse(
         "azure/providers.tf",
         {
@@ -88,50 +98,58 @@ def return_vm_sizes():
     return AzLivingCache.filtered_vm_list()
 
 
-@app.get("/cloudinit/docker")
+@app.post("/cloudinit/docker")
 def return_dataverse_docker_playbook(
         request: Request,
 ):
-    return templates.TemplateResponse(
-        "cloudinit/docker-dataverse.yml",
-        {
-            "request": request,
-        }
+    return base_get_method(
+        request=request,
+        variables={},
+        filepath='/src/templates/cloudinit/docker-dataverse.yml',
     )
 
-@app.get("/cloudinit/downloadfiles")
+@app.post("/cloudinit/downloadfiles")
 def download_files_to_home_dir(
         request: Request,
-        file_urls=[]
+        variables: dict | None = DOWNLOAD_FILE_DEFAULTS
 ):
-    fixed_urls = str(file_urls).split(",")
-    stripped_urls = [item.strip() for item in fixed_urls]
-    return templates.TemplateResponse(
-        "cloudinit/download-files.yml",
-        {
-            "request": request,
-            "files": set(stripped_urls),
-        }
+    # This needs a generic URL validator
+    return base_get_method(
+        request=request,
+        variables=variables,
+        filepath='/src/templates/cloudinit/download-files.yml'
     )
 
-@app.get("/bash/scripts/{script_name}")
+@app.post("/bash/scripts/{script_name}")
 def retrieve_bash_script(
         request: Request,
-        args: str,
+        variables: dict | None = BASH_DEFAULTS,
         script_name: str | None = 'placeholder.sh',
 ):
-    bash_validators.validate_bash_file_present(script_name)
-    return templates.TemplateResponse(
-        f"bash/{script_name}",
-        {
-            "request": request,
-            "args": args
-        }
+    return base_get_method(
+        request=request,
+        variables=variables,
+        filepath=f'/src/templates/bash/{script_name}'
     )
 
 @app.get("/bash/scripts")
-def retrieve_bash_script_list(
-        request: Request,
+def retrieve_bash_script_list():
+    return base_list_method(path='bash')
+
+@app.post("/bash/scripts")
+def create_bash_script(
+        filename: str,
+        template: UploadFile
 ):
-    bash_files = os.listdir('/src/templates/bash')
-    return JSONResponse(content=jsonable_encoder(bash_files))
+    full_path = os.path.join('/src/templates', f'bash/{filename}')
+    return base_create_method(
+        path=full_path,
+        template=template
+    )
+
+@app.delete("/bash/scripts/{script_name}")
+def delete_bash_script(
+    script_name: str,
+):
+    full_path = os.path.join('/src/templates', f'bash/{script_name}')
+    return base_delete_method(path=full_path)
